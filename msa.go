@@ -101,7 +101,15 @@ func (msa *Msa) MapSearch(predicate func(string, string) bool) Msa {
 	for i := 0; i < msa.nRow; i++ {
 		waitgroup.Add(1)
 		go func(w *sync.WaitGroup, _i *bool, r *MsaRecord) {
-			*_i = predicate(r.name, string(r.Sequence))
+			// Filter gap out of seq
+			seq := make([]byte, 0, len(r.Sequence))
+			for _, s := range r.Sequence {
+				if s != '-' {
+					seq = append(seq, s)
+				}
+			}
+
+			*_i = predicate(r.name, string(seq))
 			w.Done()
 		}(&waitgroup, &status[i], msa.Records[i])
 	}
